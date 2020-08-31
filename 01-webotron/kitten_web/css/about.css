@@ -1,0 +1,140 @@
+* {
+	/*outline: 1px dotted orange;*/
+}
+body {
+	background-color: #eaeaea;
+	color: #fff;
+	width: 960px;
+	margin: 0px auto;
+}
+/*header section*/
+header {
+	background-color: #2d2d2d;
+	height: 100px;
+}
+header ul {
+	display: inline-block;
+}
+header ul li {
+	display: inline;
+	font-family: 'Droid Sans', sans-serif;
+	text-transform: uppercase;
+}
+a {
+	text-decoration: none;
+	color: #878787;
+}
+.topbar {
+	display: block;
+}
+.topbar div {
+	display: inline-block;
+	background-color: #000;
+	height: 15px;
+	width: 105px;
+}
+.selected {
+	color: #fff;
+}
+.nav {
+	float: left;
+	margin-top: 25px;
+	margin-left: 25px;
+}
+.nav li {
+	margin-right: 45px;
+}
+.icons {
+	float: right;
+	margin-top: 15px;
+}
+.icons img {
+	height: 40px;
+	width: 40px;
+	margin-right: 25px;
+}
+#selected {
+	background-color: #e00000;
+}
+/*main section*/
+main {
+	position: relative;
+	background-color: #3a3a3a;
+}
+.banner{
+	position: relative;
+}
+#textbox {
+	position: absolute;
+	top: 75px;
+	left: 130px;
+	width: 700px;
+	height: 250px;
+	border: 10px solid #fff;
+}
+#textbox h2 {
+	text-transform: uppercase;
+	font-family: 'Droid Sans', sans-serif;
+	font-size: 50px;
+	margin: 90px 215px;
+}
+/*footer section*/
+footer {
+	position: relative;
+	background-color: #2d2d2d;
+	height: 20px;
+}
+footer p {
+	margin: 0px auto;
+}
+
+/*///////////////////////////////////////////////////*/
+/*ABOUT PAGE styles*/
+
+.content {
+	background-color: #3a3a3a;
+	position: relative;
+	height: 400px;
+	color: #fff;
+	font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+	font-weight: lighter;
+}
+
+.content h2 {
+	position: absolute;
+	/*clear:left;*/
+	width: 960px;
+	padding: 30px 0;
+	text-align: center;
+	font-size: 40px;
+}
+
+#h_rule {
+	position: absolute;
+	/*margin-top: 100px;*/
+	/*display: inline-block;*/
+	background-color: #fff;
+	width: 170px;
+	height: 3px;
+	margin: 0 auto;
+	font-size: 3px;
+}
+
+.columns {
+	position: relative;;
+	padding: 150px 0;
+	margin-top: 15px;
+	margin-right: 30px;
+}
+
+.columns ul li {
+	position: absolute;
+	padding: 150px 0;
+	display: inline-block;;
+	font-size: 14px;
+	line-height: 1.6em;
+	margin-top: 15px;
+	margin-left: 30px;
+	margin-right: 30px;
+	float:left;
+}

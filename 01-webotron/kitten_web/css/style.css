@@ -1,0 +1,150 @@
+* {
+	/*outline: 1px dotted orange;*/
+}
+body {
+	background-color: #eaeaea;
+	color: #fff;
+	width: 960px;
+	margin: 0px auto;
+	padding: 0px;
+}
+/*header section*/
+header {
+	background-color: #2d2d2d;
+	height: 100px;
+}
+header ul {
+	display: inline-block;
+}
+header ul li {
+	display: inline;
+	font-family: 'Droid Sans', sans-serif;
+	text-transform: uppercase;
+}
+a {
+	text-decoration: none;
+	color: #878787;
+}
+.topbar {
+	display: block;
+}
+.topbar div {
+	display: inline-block;
+	background-color: #000;
+	height: 15px;
+	width: 105px;
+}
+.selected {
+	color: #fff;
+}
+.nav {
+	float: left;
+	margin-top: 25px;
+	margin-left: 25px;
+}
+.nav li {
+	margin-right: 45px;
+	font-weight: 700;
+}
+.icons {
+	float: right;
+	margin-top: 15px;
+}
+.icons img {
+	height: 40px;
+	width: 40px;
+	margin-right: 25px;
+}
+#selected {
+	background-color: #e00000;
+}
+/*main section*/
+main {
+	position: relative;
+	background-color: #3a3a3a;
+}
+.banner{
+	position: relative;
+}
+/*about page*/
+
+/*contact page*/
+form {
+	width: 500px;
+	margin-left: 230px;
+}
+form ul {
+	height: 450px;
+}
+form ul li {
+	display: block;
+	margin-top: 50px;
+}
+form ul li label {
+	font-family: 'Droid Sans', sans-serif;
+	font-size: 24px;
+	margin-bottom: 30px;
+}
+form ul li input {
+	float: right;
+	width: 350px;
+	height: 50px;
+	border: none;
+}
+.content h2 {
+	font-family: 'Droid Sans', sans-serif;
+	font-weight: 100;
+	text-align: center;
+	font-size: 40px;
+	margin-bottom: 20px;
+	margin-top: 50px;
+}
+#textbox {
+	position: absolute;
+	top: 75px;
+	left: 130px;
+	width: 700px;
+	height: 250px;
+	border: 10px solid #fff;
+}
+#textbox h2 {
+	text-transform: uppercase;
+	font-family: 'Droid Sans', sans-serif;
+	font-size: 50px;
+	font-weight: 700;
+	margin: 90px 215px;
+}
+#h_rule {
+	height: 1px;
+	display: inline-block;
+	background-color: #fff;
+	width: 150px;
+	margin-left: 410px;
+	margin-bottom: 20px;
+}
+#message {
+	height: 125px;
+}
+#submit {
+	width: 150px;
+	font-family: 'Droid Sans', sans-serif;
+	font-weight: 700;
+	background-color: #e00000;
+	color: #fff;
+	text-transform: uppercase;
+	font-size: 18px;
+	left: 0px;
+	margin-left: 350px;
+	margin-top: 20px;
+}
+/*footer section*/
+footer {
+	clear: left;
+	background-color: #2d2d2d;
+	height: 20px;
+	padding: 15px 0px;
+}
+footer p {
+	margin-left: 325px;
+	font-family: 'Droid Sans', sans-serif;
+}
