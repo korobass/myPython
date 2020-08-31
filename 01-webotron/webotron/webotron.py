@@ -47,7 +47,7 @@ def list_buckets():
 @click.argument('bucket')
 def setup_bucket(bucket):
     """Create and configure static website on s3."""
-    """ initiating variable before try/except """
+    # initiating variable before try/except
     s3_bucket = None
     try:
         s3_bucket = s3.create_bucket(
@@ -56,11 +56,11 @@ def setup_bucket(bucket):
                 'LocationConstraint': session.region_name
             }
         )
-    except ClientError as e:
-        if e.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
+    except ClientError as error:
+        if error.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
             s3_bucket = s3.Bucket(bucket)
         else:
-            raise e
+            raise error
 
     policy = """
     {
@@ -79,13 +79,13 @@ def setup_bucket(bucket):
     policy = policy.strip()
     pol = s3_bucket.Policy()
     pol.put(Policy=policy)
-    ws = s3_bucket.Website()
-    ws.put(WebsiteConfiguration={
+    website = s3_bucket.Website()
+    website.put(WebsiteConfiguration={
             'ErrorDocument': {'Key': 'index.html'},
             'IndexDocument': {'Suffix': 'index.html'}
         }
     )
-    return
+    #return
 
 
 def upload_file(s3_bucket, path, key):
@@ -94,9 +94,7 @@ def upload_file(s3_bucket, path, key):
     s3_bucket.upload_file(
         path,
         key,
-        ExtraArgs={
-            'ContentType': 'text/html'
-        }
+        ExtraArgs={content_type}
     )
 
 
@@ -111,11 +109,11 @@ def sync(pathname, bucket):
 
     def handle_directory(target):
         """Go recursively via directory and upload all files."""
-        for p in target.iterdir():
-            if p.is_dir():
-                handle_directory(p)
-            if p.is_file():
-                upload_file(s3_bucket, str(p), str(p.relative_to(root)))
+        for path in target.iterdir():
+            if path.is_dir():
+                handle_directory(path)
+            if path.is_file():
+                upload_file(s3_bucket, str(path), str(path.relative_to(root)))
 
     handle_directory(root)
 
