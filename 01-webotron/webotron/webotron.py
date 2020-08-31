@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""Webotron: Deploy websites with aws
+"""Webotron: Deploy websites with aws.
 
 Webotron automates the process of deploying static websites to AWS
 - Configure AWS S3 buckets
@@ -24,21 +24,21 @@ s3 = session.resource('s3')
 
 @click.group()
 def cli():
-    """Webotron deploys websites to AWS"""
+    """Webotron deploys websites to AWS."""
     pass
 
 
 @cli.command('list-bucket-objects')
 @click.argument('bucket')
 def list_bucket_objects(bucket):
-    """List objects in s3 bucket"""
+    """List objects in s3 bucket."""
     for obj in s3.Bucket(bucket).objects.all():
         print(obj)
 
 
 @cli.command('list-buckets')
 def list_buckets():
-    """List all s3 buckets"""
+    """List all s3 buckets."""
     for bucket in s3.buckets.all():
         print(bucket)
 
@@ -46,7 +46,7 @@ def list_buckets():
 @cli.command('setup-bucket')
 @click.argument('bucket')
 def setup_bucket(bucket):
-    """Create and configure static website on s3"""
+    """Create and configure static website on s3."""
     """ initiating variable before try/except """
     s3_bucket = None
     try:
@@ -89,7 +89,7 @@ def setup_bucket(bucket):
 
 
 def upload_file(s3_bucket, path, key):
-    """Upload file to s3 bucket"""
+    """Upload file to s3 bucket."""
     content_type = mimetypes.guess_type(key)[0] or 'text/plain'
     s3_bucket.upload_file(
         path,
@@ -104,13 +104,13 @@ def upload_file(s3_bucket, path, key):
 @click.argument('pathname', type=click.Path(exists=True))
 @click.argument('bucket')
 def sync(pathname, bucket):
-    """Sync content of local directory to bucket"""
+    """Sync content of local directory to bucket."""
     s3_bucket = s3.Bucket(bucket)
 
     root = Path(pathname).expanduser().resolve()
 
     def handle_directory(target):
-        """Go recursively via directory and upload all files"""
+        """Go recursively via directory and upload all files."""
         for p in target.iterdir():
             if p.is_dir():
                 handle_directory(p)
