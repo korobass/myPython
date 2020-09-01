@@ -14,6 +14,7 @@ boto3 = "*"
 ipython = "*"
 click = "*"
 fqdn = "*"
+pyflakes = "*"
 
 [requires]
 python_version = "3.8"
