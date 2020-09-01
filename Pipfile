@@ -13,6 +13,7 @@ pylint = "*"
 boto3 = "*"
 ipython = "*"
 click = "*"
+fqdn = "*"
 
 [requires]
 python_version = "3.8"
