@@ -42,7 +42,6 @@ def list_bucket_objects(bucket):
         print(obj)
 
 
-
 @cli.command('setup-bucket')
 @click.argument('bucket')
 def setup_bucket(bucket):
@@ -50,7 +49,7 @@ def setup_bucket(bucket):
     s3_bucket = bucket_manager.init_bucket(bucket)
     bucket_manager.set_policy(s3_bucket)
     bucket_manager.configure_website(s3_bucket)
-    return
+
 
 @cli.command('sync')
 @click.argument('pathname', type=click.Path(exists=True))

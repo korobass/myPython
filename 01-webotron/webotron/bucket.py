@@ -1,12 +1,14 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-from botocore.exceptions import ClientError
+
+"""Classes for S3 Buckets."""
+
 import mimetypes
 from pathlib import Path
 import re
+import sys
+from botocore.exceptions import ClientError
 
-
-"""Classes for S3 Buckets."""
 
 class BucketManager:
     """Manage an S3 Bucket."""
@@ -21,36 +23,35 @@ class BucketManager:
         return self.s3.buckets.all()
 
     def all_objects(self, bucket_name):
-        """Get all objects of a bucket"""
-        if self.is_valid_bucket_name(bucket_name):
-            return self.s3.Bucket(bucket_name).objects.all()
-        else:
-            quit(self.print_aws_s3_doc())
+        """Get all objects of a bucket."""
+        if not self.is_valid_bucket_name(bucket_name):
+            sys.exit(self.print_aws_s3_doc())
 
+        return self.s3.Bucket(bucket_name).objects.all()
 
     def init_bucket(self, bucket_name):
-        """Create a new bucket, or return existing one by name"""
-        if self.is_valid_bucket_name(bucket_name):
-            s3_bucket = None
-            try:
-                s3_bucket = self.s3.create_bucket(
-                    Bucket=bucket_name,
-                    CreateBucketConfiguration={
-                        'LocationConstraint': self.session.region_name
-                    }
-                )
-            except ClientError as error:
-                if error.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
-                    s3_bucket = self.s3.Bucket(bucket_name)
-                else:
-                    raise error
+        """Create a new bucket, or return existing one by name."""
+        if not self.is_valid_bucket_name(bucket_name):
+            sys.exit(self.print_aws_s3_doc())
+        s3_bucket = None
+        try:
+            s3_bucket = self.s3.create_bucket(
+                Bucket=bucket_name,
+                CreateBucketConfiguration={
+                    'LocationConstraint': self.session.region_name
+                }
+            )
+        except ClientError as error:
+            if error.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
+                s3_bucket = self.s3.Bucket(bucket_name)
+            else:
+                raise error
 
-            return s3_bucket
-        else:
-            quit(self.print_aws_s3_doc())
+        return s3_bucket
 
-    def set_policy(self, bucket):
-        """Set bucket policy to be public readable"""
+    @staticmethod
+    def set_policy(bucket):
+        """Set bucket policy to be public readable."""
         policy = """
         {
           "Version":"2012-10-17",
@@ -69,8 +70,9 @@ class BucketManager:
         pol = bucket.Policy()
         pol.put(Policy=policy)
 
-    def configure_website(self, bucket):
-        """Configure static website on S3"""
+    @staticmethod
+    def configure_website(bucket):
+        """Configure static website on S3."""
         website = bucket.Website()
         website.put(WebsiteConfiguration={
             'ErrorDocument': {'Key': 'index.html'},
@@ -102,16 +104,18 @@ class BucketManager:
         """Verify if bucket follow aws naming requirements."""
         if not 3 < len(bucket_name) < 63:
             return False
-        bucket_name_regex = re.compile(r'^[a-z0-9]([a-z-0-9-]{0,61}[a-z0-9])?$', re.VERBOSE)
+        bucket_name_regex = re.compile(
+            r'^[a-z0-9]([a-z-0-9-]{0,61}[a-z0-9])?$',
+            re.VERBOSE
+        )
         return bucket_name_regex.match(bucket_name)
 
     def sync(self, pathname, bucket_name):
         """Sync local folder to s3 bucket."""
-        if self.is_valid_bucket_name(bucket_name):
-            bucket = self.s3.Bucket(bucket_name)
-        else:
-            quit(self.print_aws_s3_doc())
+        if not self.is_valid_bucket_name(bucket_name):
+            sys.exit(self.print_aws_s3_doc())
 
+        bucket = self.s3.Bucket(bucket_name)
         root = Path(pathname).expanduser().resolve()
 
         def handle_directory(target):
