@@ -24,7 +24,9 @@ bucket_manager = None
 @click.group()
 @click.option('--profile', default=None,
               help="Use a given AWS profile.")
-def cli(profile):
+@click.option('--region', default=None,
+              help="Use a given AWS region.")
+def cli(profile, region):
     """Webotron deploys websites to AWS."""
     global session, bucket_manager
     session_cfg = {}
@@ -33,6 +35,9 @@ def cli(profile):
     else:
         sys.exit("Be careful when using default aws profile. \
                  Use --profile=name instead")
+    if region:
+        session_cfg['region_name'] = region
+
     session = boto3.Session(**session_cfg)
     bucket_manager = BucketManager(session)
 
