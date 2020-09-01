@@ -18,8 +18,9 @@ import click
 from bucket import BucketManager
 
 
-session = None
-bucket_manager = None
+SESSION = None
+BUCKET_MANAGER = None
+
 
 @click.group()
 @click.option('--profile', default=None,
@@ -28,7 +29,7 @@ bucket_manager = None
               help="Use a given AWS region.")
 def cli(profile, region):
     """Webotron deploys websites to AWS."""
-    global session, bucket_manager
+    global SESSION, BUCKET_MANAGER
     session_cfg = {}
     if profile:
         session_cfg['profile_name'] = profile
@@ -38,14 +39,14 @@ def cli(profile, region):
     if region:
         session_cfg['region_name'] = region
 
-    session = boto3.Session(**session_cfg)
-    bucket_manager = BucketManager(session)
+    SESSION = boto3.Session(**session_cfg)
+    BUCKET_MANAGER = BucketManager(SESSION)
 
 
 @cli.command('list-buckets')
 def list_buckets():
     """List all s3 buckets."""
-    for bucket in bucket_manager.all_buckets():
+    for bucket in BUCKET_MANAGER.all_buckets():
         print(bucket)
 
 
@@ -53,7 +54,7 @@ def list_buckets():
 @click.argument('bucket')
 def list_bucket_objects(bucket):
     """List objects in s3 bucket."""
-    for obj in bucket_manager.all_objects(bucket):
+    for obj in BUCKET_MANAGER.all_objects(bucket):
         print(obj)
 
 
@@ -61,9 +62,9 @@ def list_bucket_objects(bucket):
 @click.argument('bucket')
 def setup_bucket(bucket):
     """Create and configure static website on s3."""
-    s3_bucket = bucket_manager.init_bucket(bucket)
-    bucket_manager.set_policy(s3_bucket)
-    bucket_manager.configure_website(s3_bucket)
+    s3_bucket = BUCKET_MANAGER.init_bucket(bucket)
+    BUCKET_MANAGER.set_policy(s3_bucket)
+    BUCKET_MANAGER.configure_website(s3_bucket)
 
 
 @cli.command('sync')
@@ -71,7 +72,8 @@ def setup_bucket(bucket):
 @click.argument('bucket')
 def sync(pathname, bucket):
     """Sync content of local directory to bucket."""
-    bucket_manager.sync(pathname, bucket)
+    BUCKET_MANAGER.sync(pathname, bucket)
+    print(BUCKET_MANAGER.get_bucket_url(BUCKET_MANAGER.s3.Bucket(bucket)))
 
 
 if __name__ == '__main__':

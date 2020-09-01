@@ -22,6 +22,23 @@ class BucketManager:
         """Get an iterator for all buckets."""
         return self.s3.buckets.all()
 
+    def get_bucket_region_name(self, bucket_name):
+        """Get the bucket's region name."""
+        client = self.s3.meta.client
+        bucket_location = client.get_bucket_location(Bucket=bucket_name)
+        return bucket_location["LocationConstraint"]
+
+    def get_bucket_url(self, bucket):
+        """
+        Get static website URL.
+
+        https://docs.aws.amazon.com/AmazonS3/latest/dev/WebsiteEndpoints.html
+        http://bucket-name.s3-website.Region.amazonaws.com/folder-name/object-name
+        """
+        return 'http://' + bucket.name + \
+               '.s3-website.' + self.get_bucket_region_name(bucket.name) + \
+               '.amazonaws.com'
+
     def all_objects(self, bucket_name):
         """Get all objects of a bucket."""
         if not self.is_valid_bucket_name(bucket_name):
