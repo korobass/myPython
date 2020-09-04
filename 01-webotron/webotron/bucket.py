@@ -16,7 +16,9 @@ from pprint import pprint
 
 class BucketManager:
     """Manage an S3 Bucket."""
+
     CHUNK_SIZE = 8388608
+
     def __init__(self, session):
         """Create a BucketManager object."""
         self.session = session
@@ -50,6 +52,9 @@ class BucketManager:
 
     def all_objects(self, bucket_name):
         """Get all objects of a bucket."""
+        # exit if bucket doesn't exist
+        if not self.check_bucket(bucket_name):
+            sys.exit()
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
 
@@ -106,8 +111,9 @@ class BucketManager:
             }
         )
 
-    def load_manifest(self, bucket_name ):
+    def load_manifest(self, bucket_name):
         """Load manifest for caching purposes.
+
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Paginator.ListObjectsV2
         """
         paginator = self.s3.meta.client.get_paginator('list_objects_v2')
@@ -124,7 +130,7 @@ class BucketManager:
         return hash
 
     def gen_etag(self, filepath):
-        """Generate ETag based on local file"""
+        """Generate ETag based on local file."""
         hashes = []
 
         with open(filepath, 'rb') as file:
@@ -148,14 +154,12 @@ class BucketManager:
                     (h.digest() for h in hashes)
                 )
             )
+            # format exactly as in s3 objects metadata:
+            # e. g. 'ETag': '"56f7206f131f959afec172068057ac16"'
             return '"{}-{}"'.format(hash.hexdigest(), len(hashes))
 
-
-        # format exactly as in s3 objects metadata:
-        # e. g. 'ETag': '"56f7206f131f959afec172068057ac16"'
-
     def delete_missing_objects(self, bucket_name):
-        """Delete file that doesn't exist locally on the s3 bucket"""
+        """Delete file that doesn't exist locally on the s3 bucket."""
         paginator = self.s3.meta.client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket_name):
             for obj in page.get('Contents', []):
@@ -163,14 +167,17 @@ class BucketManager:
                 if not Path.exists(pathname):
                     self.manifest[obj['Key']] = None
                     print("Deleting {}, non existing object".format(obj['Key']))
-                    self.s3.meta.client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+                    self.s3.meta.client.delete_object(
+                        Bucket=bucket_name,
+                        Key=obj['Key']
+                    )
 
     def upload_file(self, bucket, path, key):
         """Upload file to s3 bucket."""
         content_type = mimetypes.guess_type(key)[0] or 'text/plain'
         etag = self.gen_etag(path)
         if self.manifest.get(key, '') == etag:
-            #print("Skipping {}, etag.match".format(key))
+            # print("Skipping {}, etag.match".format(key))
             return
 
         print("Uploading {}, new file".format(key))
@@ -202,14 +209,16 @@ class BucketManager:
 
     def sync(self, pathname, bucket_name):
         """Sync local folder to s3 bucket."""
-
+        # exit if bucket doesn't exist
+        if not self.check_bucket(bucket_name):
+            sys.exit()
         # verify if bucket has a valid name
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
 
         bucket = self.s3.Bucket(bucket_name)
         root = Path(pathname).expanduser().resolve()
-        print(root)
+
         self.load_manifest(bucket_name)
 
         def handle_directory(target):
@@ -218,8 +227,48 @@ class BucketManager:
                 if path.is_dir():
                     handle_directory(path)
                 if path.is_file():
-                    self.upload_file(bucket, str(path), str(path.relative_to(root)))
-
+                    self.upload_file(
+                        bucket,
+                        str(path),
+                        str(path.relative_to(root))
+                    )
         handle_directory(root)
-        self.delete_missing_objects(bucket_name)
 
+    def check_bucket(self, bucket_name):
+        """Check if bucket exists."""
+        try:
+            self.s3.meta.client.head_bucket(Bucket=bucket_name)
+            return True
+        except ClientError as error:
+            # If a client error is thrown, then check that it was a 404 error.
+            # If it was a 404 error, then the bucket does not exist.
+            error_code = int(error.response['Error']['Code'])
+            if error_code == 403:
+                print("Private Bucket. Forbidden Access!")
+                return True
+            elif error_code == 404:
+                print("Bucket Does Not Exist!")
+                return False
+
+    def delete_bucket(self, bucket_name):
+        """Delete bucket and all it's objects."""
+        # exit if bucket doesn't exist
+        if not self.check_bucket(bucket_name):
+            sys.exit()
+        # verify if bucket has a valid name
+        if not self.is_valid_bucket_name(bucket_name):
+            sys.exit(self.print_aws_s3_doc())
+        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=bucket_name):
+            for obj in page.get('Contents', []):
+                pathname = Path("kitten_web/" + obj['Key'])
+                if not Path.exists(pathname):
+                    self.manifest[obj['Key']] = None
+                    print("Deleting {}, non existing object".format(obj['Key']))
+                    self.s3.meta.client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+                else:
+                    self.manifest[obj['Key']] = None
+                    print("Deleting {}, object".format(obj['Key']))
+                    self.s3.meta.client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+        print("Deleting {} bucket".format(bucket_name))
+        self.s3.Bucket(bucket_name).delete()

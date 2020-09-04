@@ -16,4 +16,9 @@ Webotron currently has the following features:
 - sync directory to bucket:
     - including multipart upload,
     - skipping files that are already in the bucket
+    - optionally deleting files from bucket, that are no longer available in local
+- delete bucket
 - set aws profile with --profile=<profileName>
+- set aws region with -r <regionName> or --region=<regionName>
+- handling exception for non existing bucket
+- bucket name validation

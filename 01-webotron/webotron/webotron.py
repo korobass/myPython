@@ -23,9 +23,9 @@ BUCKET_MANAGER = None
 
 
 @click.group()
-@click.option('--profile', default=None,
+@click.option('-p', '--profile', default=None,
               help="Use a given AWS profile.")
-@click.option('--region', default=None,
+@click.option('-r', '--region', default=None,
               help="Use a given AWS region.")
 def cli(profile, region):
     """Webotron deploys websites to AWS."""
@@ -68,14 +68,26 @@ def setup_bucket(bucket):
 
 
 @cli.command('sync')
+@click.option('-d', '--delete', is_flag=True,
+              help="Files that exist in the destination but not in the source are deleted during sync.")
 @click.argument('pathname', type=click.Path(exists=True))
 @click.argument('bucket')
-def sync(pathname, bucket):
+def sync(delete, pathname, bucket):
     """Sync content of local directory to bucket."""
     BUCKET_MANAGER.sync(pathname, bucket)
-    print(BUCKET_MANAGER.get_bucket_url(BUCKET_MANAGER.s3.Bucket(bucket)))
+    if delete:
+        BUCKET_MANAGER.delete_missing_objects(bucket)
+
+    print("bucket url: " +
+          BUCKET_MANAGER.get_bucket_url(BUCKET_MANAGER.s3.Bucket(bucket)))
+
+
+@cli.command('delete-bucket')
+@click.argument('bucket')
+def delete_bucket(bucket):
+    """Delete bucket."""
+    BUCKET_MANAGER.delete_bucket(bucket)
 
 
 if __name__ == '__main__':
-    """Use default profile and Ireland region"""
     cli()
