@@ -1,6 +1,6 @@
 # Automating AWS with Python
 
-Repository for the A Cloud Guru course *Automating AWS with Python*
+Learning Python based on a ACloudGuru course *Automating AWS with Python* by Robin Norwood.
 
 ## 01-webotron
 
