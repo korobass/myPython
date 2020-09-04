@@ -18,7 +18,7 @@ Webotron currently has the following features:
     - skipping files that are already in the bucket
     - -d or --delete flag to optionally delete files from bucket, that are no longer available in local
 - delete bucket
-- set aws profile with --profile=<profileName>
-- set aws region with -r <regionName> or --region=<regionName>
+- set aws profile with -p <"profileName"> or --profile=<"profileName">
+- set aws region with -r <"regionName"> or --region=<"regionName">
 - handling exception for non existing bucket
 - bucket name validation
