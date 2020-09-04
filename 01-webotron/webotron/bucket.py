@@ -110,24 +110,10 @@ class BucketManager:
         """Load manifest for caching purposes.
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Paginator.ListObjectsV2
         """
-
-        # root = pathname
-        # # only load ETAG for object that exist locally
-        # def handle_directory(target):
-        #     """Go recursively via directory and upload all files."""
-        #     for path in target.iterdir():
-        #         if path.is_dir():
-        #             handle_directory(path)
-        #         if path.is_file():
-        #             obj = self.s3.meta.client.head_object(Bucket=bucket_name, Key=str(path.relative_to(root)))
-        #             self.manifest[obj['Key']] = obj['ETag']
-        #
-        #     handle_directory(pathname)
         paginator = self.s3.meta.client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket_name):
             for obj in page.get('Contents', []):
                 self.manifest[obj['Key']] = obj['ETag']
-        #         #pprint(obj['Key'])
 
     @staticmethod
     def hash_data(data):
@@ -184,7 +170,7 @@ class BucketManager:
         content_type = mimetypes.guess_type(key)[0] or 'text/plain'
         etag = self.gen_etag(path)
         if self.manifest.get(key, '') == etag:
-            print("Skipping {}, etag.match".format(key))
+            #print("Skipping {}, etag.match".format(key))
             return
 
         print("Uploading {}, new file".format(key))
