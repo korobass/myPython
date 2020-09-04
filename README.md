@@ -13,5 +13,7 @@ Webotron currently has the following features:
 - List buckets
 - List contents of a bucket
 - Create and Setup bucket
-- sync directory to bucket
+- sync directory to bucket:
+    - including multipart upload,
+    - skipping files that are already in the bucket
 - set aws profile with --profile=<profileName>

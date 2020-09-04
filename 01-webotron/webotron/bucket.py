@@ -2,21 +2,28 @@
 # -*- coding: utf-8 -*-
 
 """Classes for S3 Buckets."""
-
+import boto3
 import mimetypes
 from pathlib import Path
 import re
 import sys
 from botocore.exceptions import ClientError
+from hashlib import md5
+from functools import reduce
 
 
 class BucketManager:
     """Manage an S3 Bucket."""
-
+    CHUNK_SIZE = 8388608
     def __init__(self, session):
         """Create a BucketManager object."""
         self.session = session
         self.s3 = self.session.resource('s3')
+        self.transfer_config = boto3.s3.transfer.TransferConfig(
+            multipart_threshold=self.CHUNK_SIZE,
+            multipart_chunksize=self.CHUNK_SIZE
+        )
+        self.manifest = {}
 
     def all_buckets(self):
         """Get an iterator for all buckets."""
@@ -97,17 +104,74 @@ class BucketManager:
             }
         )
 
+    def load_manifest(self, bucket_name):
+        """Load manifest for caching purposes.
+        https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Paginator.ListObjectsV2
+        """
+
+        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        for page in paginator.paginate(Bucket=bucket_name):
+            for obj in page.get('Contents', []):
+                self.manifest[obj['Key']] = obj['ETag']
+                #pprint(obj)
+
     @staticmethod
-    def upload_file(bucket, path, key):
+    def hash_data(data):
+        """Generate md5 hash of data."""
+        hash = md5()
+        hash.update(data)
+
+        return hash
+
+    def gen_etag(self, filepath):
+        """Generate ETag based on local file"""
+        hashes = []
+
+        with open(filepath, 'rb') as file:
+            while True:
+                # Read only the data of file up to the size
+                data = file.read(self.CHUNK_SIZE)
+                if not data:
+                    break
+                hashes.append(self.hash_data(data))
+        # if empty file
+        if not hashes:
+            return
+        # single file
+        elif len(hashes) == 1:
+            return '"{}"'.format(hashes[0].hexdigest())
+        else:
+            # algorithm that AWS is using to generate ETAG for large files
+            hash = self.hash_data(
+                reduce(
+                    lambda x, y: x+y,
+                    (h.digest() for h in hashes)
+                )
+            )
+            return '"{}-{}"'.format(hash.hexdigest(), len(hashes))
+
+
+        # format exactly as in s3 objects metadata:
+        # e. g. 'ETag': '"56f7206f131f959afec172068057ac16"'
+
+
+
+    def upload_file(self, bucket, path, key):
         """Upload file to s3 bucket."""
         content_type = mimetypes.guess_type(key)[0] or 'text/plain'
+        etag = self.gen_etag(path)
+        if self.manifest.get(key, '') == etag:
+            print("Skipping {}, etag.match".format(key))
+            return
 
+        print("Uploading {}, new file".format(key))
         return bucket.upload_file(
             path,
             key,
             ExtraArgs={
                 'ContentType': content_type
-            }
+            },
+            Config=self.transfer_config
         )
 
     @staticmethod
@@ -129,10 +193,14 @@ class BucketManager:
 
     def sync(self, pathname, bucket_name):
         """Sync local folder to s3 bucket."""
+
+        # verify if bucket has a valid name
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
 
         bucket = self.s3.Bucket(bucket_name)
+        self.load_manifest(bucket_name)
+
         root = Path(pathname).expanduser().resolve()
 
         def handle_directory(target):

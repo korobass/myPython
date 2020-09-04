@@ -77,4 +77,5 @@ def sync(pathname, bucket):
 
 
 if __name__ == '__main__':
+    """Use default profile and Ireland region"""
     cli()
