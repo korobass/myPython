@@ -202,7 +202,7 @@ class BucketManager:
         if not 3 < len(bucket_name) < 63:
             return False
         bucket_name_regex = re.compile(
-            r'^[a-z0-9]([a-z-0-9-]{0,61}[a-z0-9])?$',
+            r'^[a-z0-9]([a-z-0-9-.]{0,61}[a-z0-9])?$',
             re.VERBOSE
         )
         return bucket_name_regex.match(bucket_name)
