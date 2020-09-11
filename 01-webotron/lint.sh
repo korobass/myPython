@@ -1,7 +1,7 @@
 #!/bin/bash
-
+pipenv install pycodestyle pydocstyle pylint pyflakes
 PACKAGE=webotron
-pycodestyle $PACKAGE
-pydocstyle $PACKAGE
-pylint $PACKAGE
-pyflakes $PACKAGE
+pipenv run pycodestyle $PACKAGE
+pipenv run pydocstyle $PACKAGE
+pipenv run pylint $PACKAGE
+pipenv run pyflakes $PACKAGE

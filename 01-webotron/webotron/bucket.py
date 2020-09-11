@@ -7,11 +7,10 @@ import mimetypes
 from pathlib import Path
 import re
 import sys
-import boto3
-from botocore.exceptions import ClientError
 from hashlib import md5
 from functools import reduce
-from pprint import pprint
+import boto3
+from botocore.exceptions import ClientError
 
 
 class BucketManager:
@@ -22,7 +21,7 @@ class BucketManager:
     def __init__(self, session):
         """Create a BucketManager object."""
         self.session = session
-        self.s3 = self.session.resource('s3')
+        self.s3_res = self.session.resource('s3')
         self.transfer_config = boto3.s3.transfer.TransferConfig(
             multipart_threshold=self.CHUNK_SIZE,
             multipart_chunksize=self.CHUNK_SIZE
@@ -31,11 +30,16 @@ class BucketManager:
 
     def all_buckets(self):
         """Get an iterator for all buckets."""
-        return self.s3.buckets.all()
+        return self.s3_res.buckets.all()
 
     def get_bucket_region_name(self, bucket_name):
         """Get the bucket's region name."""
-        client = self.s3.meta.client
+        if not self.check_bucket(bucket_name):
+            sys.exit()
+        if not self.is_valid_bucket_name(bucket_name):
+            sys.exit(self.print_aws_s3_doc())
+
+        client = self.s3_res.meta.client
         bucket_location = client.get_bucket_location(Bucket=bucket_name)
         return bucket_location["LocationConstraint"]
 
@@ -58,7 +62,7 @@ class BucketManager:
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
 
-        return self.s3.Bucket(bucket_name).objects.all()
+        return self.s3_res.Bucket(bucket_name).objects.all()
 
     def init_bucket(self, bucket_name):
         """Create a new bucket, or return existing one by name."""
@@ -66,7 +70,7 @@ class BucketManager:
             sys.exit(self.print_aws_s3_doc())
         s3_bucket = None
         try:
-            s3_bucket = self.s3.create_bucket(
+            s3_bucket = self.s3_res.create_bucket(
                 Bucket=bucket_name,
                 CreateBucketConfiguration={
                     'LocationConstraint': self.session.region_name
@@ -74,7 +78,7 @@ class BucketManager:
             )
         except ClientError as error:
             if error.response['Error']['Code'] == 'BucketAlreadyOwnedByYou':
-                s3_bucket = self.s3.Bucket(bucket_name)
+                s3_bucket = self.s3_res.Bucket(bucket_name)
             else:
                 raise error
 
@@ -116,7 +120,7 @@ class BucketManager:
 
         https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/s3.html#S3.Paginator.ListObjectsV2
         """
-        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        paginator = self.s3_res.meta.client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket_name):
             for obj in page.get('Contents', []):
                 self.manifest[obj['Key']] = obj['ETag']
@@ -124,10 +128,10 @@ class BucketManager:
     @staticmethod
     def hash_data(data):
         """Generate md5 hash of data."""
-        hash = md5()
-        hash.update(data)
+        s3_hash = md5()
+        s3_hash.update(data)
 
-        return hash
+        return s3_hash
 
     def gen_etag(self, filepath):
         """Generate ETag based on local file."""
@@ -142,13 +146,13 @@ class BucketManager:
                 hashes.append(self.hash_data(data))
         # if empty file
         if not hashes:
-            return
+            return None
         # single file
         elif len(hashes) == 1:
             return '"{}"'.format(hashes[0].hexdigest())
         else:
             # algorithm that AWS is using to generate ETAG for large files
-            hash = self.hash_data(
+            s3_hash = self.hash_data(
                 reduce(
                     lambda x, y: x+y,
                     (h.digest() for h in hashes)
@@ -156,18 +160,19 @@ class BucketManager:
             )
             # format exactly as in s3 objects metadata:
             # e. g. 'ETag': '"56f7206f131f959afec172068057ac16"'
-            return '"{}-{}"'.format(hash.hexdigest(), len(hashes))
+            return '"{}-{}"'.format(s3_hash.hexdigest(), len(hashes))
 
     def delete_missing_objects(self, bucket_name):
         """Delete file that doesn't exist locally on the s3 bucket."""
-        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        paginator = self.s3_res.meta.client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket_name):
             for obj in page.get('Contents', []):
                 pathname = Path("kitten_web/" + obj['Key'])
                 if not Path.exists(pathname):
                     self.manifest[obj['Key']] = None
-                    print("Deleting {}, non existing object".format(obj['Key']))
-                    self.s3.meta.client.delete_object(
+                    print("Deleting {}, non existing object"
+                          .format(obj['Key']))
+                    self.s3_res.meta.client.delete_object(
                         Bucket=bucket_name,
                         Key=obj['Key']
                     )
@@ -194,7 +199,9 @@ class BucketManager:
     def print_aws_s3_doc():
         """Print AWS Bucket naming requirements doc."""
         return print('Invalid bucket name, please refer to documentation: \
-        https://docs.aws.amazon.com/awscloudtrail/latest/userguide/cloudtrail-s3-bucket-naming-requirements.html')
+                    https://docs.aws.amazon.com/\
+                    awscloudtrail/latest/userguide/\
+                     coudtrail-s3-bucket-naming-requirements.html')
 
     @staticmethod
     def is_valid_bucket_name(bucket_name):
@@ -216,7 +223,7 @@ class BucketManager:
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
 
-        bucket = self.s3.Bucket(bucket_name)
+        bucket = self.s3_res.Bucket(bucket_name)
         root = Path(pathname).expanduser().resolve()
 
         self.load_manifest(bucket_name)
@@ -237,7 +244,7 @@ class BucketManager:
     def check_bucket(self, bucket_name):
         """Check if bucket exists."""
         try:
-            self.s3.meta.client.head_bucket(Bucket=bucket_name)
+            self.s3_res.meta.client.head_bucket(Bucket=bucket_name)
             return True
         except ClientError as error:
             # If a client error is thrown, then check that it was a 404 error.
@@ -258,17 +265,25 @@ class BucketManager:
         # verify if bucket has a valid name
         if not self.is_valid_bucket_name(bucket_name):
             sys.exit(self.print_aws_s3_doc())
-        paginator = self.s3.meta.client.get_paginator('list_objects_v2')
+        paginator = self.s3_res.meta.client.get_paginator('list_objects_v2')
         for page in paginator.paginate(Bucket=bucket_name):
             for obj in page.get('Contents', []):
                 pathname = Path("kitten_web/" + obj['Key'])
                 if not Path.exists(pathname):
                     self.manifest[obj['Key']] = None
-                    print("Deleting {}, non existing object".format(obj['Key']))
-                    self.s3.meta.client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+                    print("Deleting {}, non existing object"
+                          .format(obj['Key']))
+                    self.s3_res.meta.client.delete_object(
+                        Bucket=bucket_name,
+                        Key=obj['Key']
+                    )
                 else:
                     self.manifest[obj['Key']] = None
-                    print("Deleting {}, object".format(obj['Key']))
-                    self.s3.meta.client.delete_object(Bucket=bucket_name, Key=obj['Key'])
+                    print("Deleting {}, object"
+                          .format(obj['Key']))
+                    self.s3_res.meta.client.delete_object(
+                        Bucket=bucket_name,
+                        Key=obj['Key']
+                    )
         print("Deleting {} bucket".format(bucket_name))
-        self.s3.Bucket(bucket_name).delete()
+        self.s3_res.Bucket(bucket_name).delete()

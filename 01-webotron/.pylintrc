@@ -1,0 +1,6 @@
+[REFACTORING]
+disable=no-else-return,
+        global-statement,
+        inconsistent-return-statements,
+        no-value-for-parameter,
+        no-member

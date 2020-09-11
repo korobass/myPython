@@ -22,3 +22,4 @@ Webotron currently has the following features:
 - set aws region with -r <"regionName"> or --region=<"regionName">
 - handling exception for non existing bucket
 - bucket name validation
+- adding custom alias record for s3 website

@@ -15,6 +15,7 @@ Webotron automates the process of deploying static websites to AWS
 import sys
 import boto3
 import click
+import util
 from bucket import BucketManager
 from domain import DomainManager
 
@@ -72,7 +73,8 @@ def setup_bucket(bucket):
 
 @cli.command('sync')
 @click.option('-d', '--delete', is_flag=True,
-              help="Files that exist in the destination but not in the source are deleted during sync.")
+              help="Files that exist in the destination\
+               but not in the source are deleted during sync.")
 @click.argument('pathname', type=click.Path(exists=True))
 @click.argument('bucket')
 def sync(delete, pathname, bucket):
@@ -82,7 +84,7 @@ def sync(delete, pathname, bucket):
         BUCKET_MANAGER.delete_missing_objects(bucket)
 
     print("bucket url: " +
-          BUCKET_MANAGER.get_bucket_url(BUCKET_MANAGER.s3.Bucket(bucket)))
+          BUCKET_MANAGER.get_bucket_url(BUCKET_MANAGER.s3_res.Bucket(bucket)))
 
 
 @cli.command('delete-bucket')
@@ -94,13 +96,16 @@ def delete_bucket(bucket):
 
 @cli.command('setup-domain')
 @click.argument('domain')
-@click.argument('bucket')
-def setup_domain(domain, bucket):
-    """Add custom domain name for bucket website"""
+def setup_domain(domain):
+    """Add custom domain name for bucket website."""
     zone = DOMAIN_MANAGER.find_hosted_zone(domain) \
         or DOMAIN_MANAGER.create_hosted_zone(domain)
 
-    DOMAIN_MANAGER.create_s3_record(zone, domain, bucket)
+    bucket_region = BUCKET_MANAGER.get_bucket_region_name(domain)
+    endpoint = util.get_endpoint(bucket_region)
+    DOMAIN_MANAGER.create_s3_record(zone, domain, endpoint)
+    print("Domain configured: http://{}".format(domain))
+
 
 if __name__ == '__main__':
     cli()
