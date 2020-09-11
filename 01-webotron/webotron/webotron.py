@@ -16,10 +16,12 @@ import sys
 import boto3
 import click
 from bucket import BucketManager
+from domain import DomainManager
 
 
 SESSION = None
 BUCKET_MANAGER = None
+DOMAIN_MANAGER = None
 
 
 @click.group()
@@ -29,7 +31,7 @@ BUCKET_MANAGER = None
               help="Use a given AWS region.")
 def cli(profile, region):
     """Webotron deploys websites to AWS."""
-    global SESSION, BUCKET_MANAGER
+    global SESSION, BUCKET_MANAGER, DOMAIN_MANAGER
     session_cfg = {}
     if profile:
         session_cfg['profile_name'] = profile
@@ -41,6 +43,7 @@ def cli(profile, region):
 
     SESSION = boto3.Session(**session_cfg)
     BUCKET_MANAGER = BucketManager(SESSION)
+    DOMAIN_MANAGER = DomainManager(SESSION)
 
 
 @cli.command('list-buckets')
@@ -88,6 +91,16 @@ def delete_bucket(bucket):
     """Delete bucket."""
     BUCKET_MANAGER.delete_bucket(bucket)
 
+
+@cli.command('setup-domain')
+@click.argument('domain')
+@click.argument('bucket')
+def setup_domain(domain, bucket):
+    """Add custom domain name for bucket website"""
+    zone = DOMAIN_MANAGER.find_hosted_zone(domain) \
+        or DOMAIN_MANAGER.create_hosted_zone(domain)
+
+    DOMAIN_MANAGER.create_s3_record(zone, domain, bucket)
 
 if __name__ == '__main__':
     cli()
