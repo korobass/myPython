@@ -18,11 +18,13 @@ import click
 import util
 from bucket import BucketManager
 from domain import DomainManager
+from acm import CertificateManager
 
 
 SESSION = None
 BUCKET_MANAGER = None
 DOMAIN_MANAGER = None
+CERTIFICATE_MANAGER = None
 
 
 @click.group()
@@ -32,7 +34,7 @@ DOMAIN_MANAGER = None
               help="Use a given AWS region.")
 def cli(profile, region):
     """Webotron deploys websites to AWS."""
-    global SESSION, BUCKET_MANAGER, DOMAIN_MANAGER
+    global SESSION, BUCKET_MANAGER, DOMAIN_MANAGER, CERTIFICATE_MANAGER
     session_cfg = {}
     if profile:
         session_cfg['profile_name'] = profile
@@ -45,6 +47,7 @@ def cli(profile, region):
     SESSION = boto3.Session(**session_cfg)
     BUCKET_MANAGER = BucketManager(SESSION)
     DOMAIN_MANAGER = DomainManager(SESSION)
+    CERTIFICATE_MANAGER = CertificateManager(SESSION)
 
 
 @cli.command('list-buckets')
@@ -105,6 +108,14 @@ def setup_domain(domain):
     endpoint = util.get_endpoint(bucket_region)
     DOMAIN_MANAGER.create_s3_record(zone, domain, endpoint)
     print("Domain configured: http://{}".format(domain))
+
+
+@cli.command('setup-cdn')
+@click.argument('domain')
+def setup_cdn(domain):
+    """Add cloudfront for bucket website."""
+    cert = CERTIFICATE_MANAGER.find_cert(domain)
+    print(cert)
 
 
 if __name__ == '__main__':
