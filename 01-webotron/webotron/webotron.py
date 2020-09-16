@@ -17,7 +17,7 @@ import boto3
 import click
 import util
 from bucket import BucketManager
-from dist import CDNManager
+from cdn import DistributionManager
 from domain import DomainManager
 from acm import CertificateManager
 
@@ -51,7 +51,7 @@ def cli(profile, region):
     BUCKET_MANAGER = BucketManager(SESSION)
     DOMAIN_MANAGER = DomainManager(SESSION)
     CERTIFICATE_MANAGER = CertificateManager(SESSION)
-    DIST_MANAGER = CDNManager(SESSION)
+    DIST_MANAGER = DistributionManager(SESSION)
 
 
 @cli.command('list-buckets')

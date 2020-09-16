@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 import sys
 
 
-class CDNManager:
+class DistributionManager:
     """Manage a ACM certificates."""
 
     def __init__(self, session):
