@@ -17,6 +17,7 @@ import boto3
 import click
 import util
 from bucket import BucketManager
+from dist import CDNManager
 from domain import DomainManager
 from acm import CertificateManager
 
@@ -25,6 +26,7 @@ SESSION = None
 BUCKET_MANAGER = None
 DOMAIN_MANAGER = None
 CERTIFICATE_MANAGER = None
+DIST_MANAGER = None
 
 
 @click.group()
@@ -34,7 +36,8 @@ CERTIFICATE_MANAGER = None
               help="Use a given AWS region.")
 def cli(profile, region):
     """Webotron deploys websites to AWS."""
-    global SESSION, BUCKET_MANAGER, DOMAIN_MANAGER, CERTIFICATE_MANAGER
+    global SESSION, BUCKET_MANAGER,\
+        DOMAIN_MANAGER, CERTIFICATE_MANAGER, DIST_MANAGER
     session_cfg = {}
     if profile:
         session_cfg['profile_name'] = profile
@@ -48,6 +51,7 @@ def cli(profile, region):
     BUCKET_MANAGER = BucketManager(SESSION)
     DOMAIN_MANAGER = DomainManager(SESSION)
     CERTIFICATE_MANAGER = CertificateManager(SESSION)
+    DIST_MANAGER = CDNManager(SESSION)
 
 
 @cli.command('list-buckets')
@@ -114,8 +118,43 @@ def setup_domain(domain):
 @click.argument('domain')
 def setup_cdn(domain):
     """Add cloudfront for bucket website."""
-    cert = CERTIFICATE_MANAGER.find_cert(domain)
-    print(cert)
+    dist = DIST_MANAGER.find_matching_dist(domain)
+    if not dist:
+        cert = CERTIFICATE_MANAGER.find_cert(domain)
+        cert_arn = cert['CertificateArn']
+        if not cert:
+            cert = CERTIFICATE_MANAGER.create_cert(domain)
+            cert_arn = cert['Certificate']['CertificateArn']
+            # handle exception here KeyError: 'Certificate'
+            if cert['Certificate']['Status'] == 'PENDING_VALIDATION':
+                DOMAIN_MANAGER.create_acm_cname_record(
+                    domain,
+                    cert['Certificate']['DomainValidationOptions']
+                    [0]['ResourceRecord']
+                )
+        print("Waiting for ACM certificate DNS validation ...")
+        CERTIFICATE_MANAGER.await_acm_validation(cert_arn)
+        dist = DIST_MANAGER.create_dist(domain, cert_arn)
+
+        print("Waiting for CloudFront distribution deployment ...")
+        DIST_MANAGER.await_deploy(dist['Id'])
+
+    zone = DOMAIN_MANAGER.find_hosted_zone(domain) \
+        or DOMAIN_MANAGER.create_hosted_zone(domain)
+
+    DOMAIN_MANAGER.create_cf_domain_record(zone, domain, dist['DomainName'])
+    print("Domain configured: https://{}".format(domain))
+
+
+@cli.command('delete-cdn')
+@click.argument('domain')
+def delete_cdn(domain):
+    """Delete CloudFront distribution."""
+    dist = DIST_MANAGER.find_matching_dist(domain)
+    if dist:
+        DIST_MANAGER.delete_dist(dist)
+    else:
+        print("There is no distribution named {}".format(domain))
 
 
 if __name__ == '__main__':

@@ -57,3 +57,50 @@ class DomainManager:
                 ]
             }
         )
+
+    def create_cf_domain_record(self, zone, domain_name, cf_domain_name):
+        """Create cloudfront record."""
+        return self.route53_client.change_resource_record_sets(
+            HostedZoneId=zone['Id'],
+            ChangeBatch={
+                'Comment': 'Created by webotron',
+                'Changes': [{
+                    'Action': 'UPSERT',
+                    'ResourceRecordSet': {
+                        'Name': domain_name,
+                        'Type': 'A',
+                        'AliasTarget': {
+                            # according to aws docs
+                            # https://docs.aws.amazon.com/Route53/latest/APIReference/API_AliasTarget.html
+                            'HostedZoneId': 'Z2FDTNDATAQYW2',
+                            'DNSName': cf_domain_name,
+                            'EvaluateTargetHealth': False
+                        }
+                    }
+                }
+                ]
+            }
+        )
+
+    def delete_cf_domain_record(self, zone, domain_name, cf_domain_name):
+        """Delete CloudFront route53 record."""
+        return self.route53_client.change_resource_record_sets(
+            HostedZoneId=zone['Id'],
+            ChangeBatch={
+                'Changes': [{
+                    'Action': 'DELETE',
+                    'ResourceRecordSet': {
+                        'Name': domain_name,
+                        'Type': 'A',
+                        'AliasTarget': {
+                            # according to aws docs
+                            # https://docs.aws.amazon.com/Route53/latest/APIReference/API_AliasTarget.html
+                            'HostedZoneId': 'Z2FDTNDATAQYW2',
+                            'DNSName': cf_domain_name,
+                            'EvaluateTargetHealth': False
+                        }
+                    }
+                }
+                ]
+            }
+        )

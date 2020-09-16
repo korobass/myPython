@@ -23,3 +23,5 @@ Webotron currently has the following features:
 - handling exception for non existing bucket
 - bucket name validation
 - adding custom alias record for s3 website
+- adding cloudfront distribution to provide https for custom domain
+- adding possibility to delete cloudfront distribution
