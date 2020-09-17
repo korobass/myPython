@@ -8,17 +8,12 @@ ipython = "*"
 pycodestyle = "*"
 pydocstyle = "*"
 pylint = "*"
+pyflakes = "*"
+setuptools = "*"
 
 [packages]
 boto3 = "*"
-ipython = "*"
 click = "*"
-fqdn = "*"
-pyflakes = "*"
-bucket = "*"
-pycodestyle = "*"
-pydocstyle = "*"
-pylint = "*"
 
 [requires]
 python_version = "3.8"

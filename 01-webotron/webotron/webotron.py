@@ -15,11 +15,11 @@ Webotron automates the process of deploying static websites to AWS
 import sys
 import boto3
 import click
-import util
-from bucket import BucketManager
-from cdn import DistributionManager
-from domain import DomainManager
-from acm import CertificateManager
+from webotron import util
+from webotron.bucket import BucketManager
+from webotron.cdn import DistributionManager
+from webotron.domain import DomainManager
+from webotron.acm import CertificateManager
 
 
 SESSION = None
