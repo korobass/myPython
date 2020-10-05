@@ -1,8 +1,5 @@
-*.pem
+config.poc.json
 node_modules/
-
-config.dev.json
-
 *.pem
 
 # Byte-compiled / optimized / DLL files

@@ -1,10 +1,10 @@
 # coding: utf-8
 import boto3
-session = boto3.Session(profile_name='ipfdigital-poc')
+session = boto3.Session(profile_name='poc')
 ec2 = session.resource('ec2')
 key_name = 'zenek1'
 key_path = key_name + '.pem'
-key = ec2.create_key_pair(KeyName=key_name)
+key = ec2.create_key_pair(KeyName=key_name) or ec2.import_key_pair(KeyName=key_name)
 key.key_material
 with open(key_path, 'w') as key_file:
     key_file.write(key.key_material)
@@ -12,7 +12,7 @@ with open(key_path, 'w') as key_file:
 get_ipython().run_line_magic('ls', '-l zenek1.pem')
 import os, stat
 os.chmod(key_path, stat.S_IRUSR | stat.S_IWUSR)
-get_ipython().run_line_magic('ls', '-l python_automation_key.pem')
+get_ipython().run_line_magic('ls', '-l zenek1.pem')
 ec2.images.filter(Owners=['amazon'])
 list(ec2.images.filter(Owners=['amazon']))
 len(list(ec2.images.filter(Owners=['amazon'])))

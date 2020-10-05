@@ -1,0 +1,8 @@
+{
+  "notifier": {
+    "slack_webhook_url": "",
+    "profile": "",
+    "region": "",
+    "asg_group_name": ""
+  }
+}
