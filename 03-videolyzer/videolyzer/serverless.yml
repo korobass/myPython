@@ -9,6 +9,23 @@ provider:
   profile: ${file(../config.${self:provider.stage}.json):videolyzer.profile}
   region: ${file(../config.${self:provider.stage}.json):videolyzer.region}
   stage: poc
+  iamRoleStatements:
+    - Effect: "Allow"
+      Action:
+        - "rekognition:StartLabelDetection"
+      Resource: "*"
+    - Effect: "Allow"
+      Action:
+        - "s3:GetObject"
+      Resource: ${self:custom.videosBucketArn}
+
+custom:
+  videosBucketArn:
+    Fn::Join:
+      - ""
+      - - "arn:aws:s3:::"
+        - ${file(../config.${self:provider.stage}.json):videolyzer.videos_bucket}
+        - "/*"
 
 functions:
   startProcessingVideo:
