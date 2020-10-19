@@ -2,7 +2,7 @@
 
 import boto3
 
-session = boto3.Session(profile_name='ipfdigital-poc')
+session = boto3.Session(profile_name='poc')
 s3 = session.resource('s3')
 acm = session.client('acm')
 # ec2_client = session.client('ec2')

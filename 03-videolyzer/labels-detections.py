@@ -3,7 +3,7 @@ import boto3
 from pathlib import Path
 
 
-session = boto3.Session(profile_name='ipfdigital-poc')
+session = boto3.Session(profile_name='poc')
 s3 = session.resource('s3')
 bucket = s3.create_bucket(Bucket='poc-videolyzer', CreateBucketConfiguration={'LocationConstraint': session.region_name})
 pathname = '~/Downloads/production ID_3929647.mp4'
